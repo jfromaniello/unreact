@@ -244,6 +244,12 @@ function generateInterpolationEscaped(path, replaceLocals, final) {
   const node = path.node;
   const wrap = v => (final ? `{{ ${v} }}` : v);
 
+  if (!node) {
+    console.dir(path);
+    console.trace('node is undefined');
+    return '';
+  }
+
   switch (node.type) {
     case 'Literal':
     case 'StringLiteral':
@@ -257,11 +263,11 @@ function generateInterpolationEscaped(path, replaceLocals, final) {
     case 'Identifier':
       return wrap(replaceLocals[node.name] || node.name);
     case 'MemberExpression': {
-      const left = generateInterpolationEscaped(node.object, replaceLocals, false);
-      const property =
-        (node.property.type === 'Literal' && propertyTranslation[node.property.name]) ||
-        node.property;
-      const right = generateInterpolationEscaped(property, {}, false);
+      const left = generateInterpolationEscaped(path.get('object'), replaceLocals, false);
+      if (node.property.type === 'Literal' && propertyTranslation[node.property.name]) {
+        return wrap(`${left}.${propertyTranslation[node.property.name]}`);
+      }
+      const right = generateInterpolationEscaped(path.get('property'), {}, false);
       return wrap(`${left}.${right}`);
     }
     case 'BinaryExpression': {
